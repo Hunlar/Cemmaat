@@ -9,15 +9,17 @@ from telegram.ext import (
 )
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# === Ayarlar === #
+# === Ortam değişkenleri === #
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_IDS = os.getenv("OWNER_IDS", "").split(",")
 
+# === Logging === #
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+# === Global grup listesi === #
 joined_chats = set()
 
 # === API Fonksiyonları === #
@@ -58,8 +60,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "/start - Botu başlatır\n"
         "/help - Komutları gösterir\n"
-        "/ayet - Rastgele Kur'an ayeti getirir\n"
-        "(Sahibin özel komutu gizli kalacak)"
+        "/ayet - Rastgele Kur'an ayeti getirir"
     )
 
 async def ayet(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -89,7 +90,7 @@ async def track_groups(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type in ["group", "supergroup"]:
         joined_chats.add(chat.id)
 
-# === Saat başı hadis gönder === #
+# === Saat başı otomatik hadis gönderme === #
 async def send_hourly_hadis(app):
     for chat_id in joined_chats:
         try:
@@ -98,7 +99,7 @@ async def send_hourly_hadis(app):
         except Exception as e:
             logging.warning(f"{chat_id} grubuna hadis gönderilemedi: {e}")
 
-# === Main === #
+# === Botu başlat === #
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -114,6 +115,7 @@ async def main():
 
     await app.run_polling()
 
+# === Async fonksiyonu çalıştır === #
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
