@@ -9,17 +9,15 @@ from telegram.ext import (
 )
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# === Ortam Değişkenleri ve Ayarlar === #
+# === Ayarlar === #
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_IDS = os.getenv("OWNER_IDS", "").split(",")
 
-# === Loglama === #
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# === Gruba girenleri kaydetmek için === #
 joined_chats = set()
 
 # === API Fonksiyonları === #
@@ -49,3 +47,73 @@ def fetch_random_ayah():
     except Exception as e:
         logging.error(f"Ayet API hatası: {e}")
     return "Ayet alınamadı."
+
+# === Komutlar === #
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Selam! Kur'an ve Hadis botuna hoş geldin. Komutlar için /help yazabilirsin."
+    )
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "/start - Botu başlatır\n"
+        "/help - Komutları gösterir\n"
+        "/ayet - Rastgele Kur'an ayeti getirir\n"
+        "(Sahibin özel komutu gizli kalacak)"
+    )
+
+async def ayet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    mesaj = fetch_random_ayah()
+    await update.message.reply_text(mesaj)
+
+async def hell(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if user_id not in OWNER_IDS:
+        await update.message.reply_text("Bu komutu kullanamazsın.")
+        return
+
+    if len(context.args) < 2:
+        await update.message.reply_text("Kullanım: /hell <chat_id> <mesaj>")
+        return
+
+    chat_id = context.args[0]
+    mesaj = " ".join(context.args[1:])
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=mesaj)
+        await update.message.reply_text("Mesaj gönderildi.")
+    except Exception as e:
+        await update.message.reply_text(f"Hata: {e}")
+
+async def track_groups(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    if chat.type in ["group", "supergroup"]:
+        joined_chats.add(chat.id)
+
+# === Saat başı hadis gönder === #
+async def send_hourly_hadis(app):
+    for chat_id in joined_chats:
+        try:
+            hadis = fetch_random_hadis()
+            await app.bot.send_message(chat_id=chat_id, text=hadis)
+        except Exception as e:
+            logging.warning(f"{chat_id} grubuna hadis gönderilemedi: {e}")
+
+# === Main === #
+async def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("ayet", ayet))
+    app.add_handler(CommandHandler("hell", hell))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_groups))
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(lambda: send_hourly_hadis(app), 'cron', minute=0)
+    scheduler.start()
+
+    await app.run_polling()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
