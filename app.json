@@ -1,0 +1,31 @@
+{
+  "name": "Kuran-Hadis-Telegram-Botu",
+  "description": "Telegram'da Kur'an ayetleri ve hadis paylaşan bot.",
+  "repository": "https://github.com/Hunlar/Cemmaat",
+  "logo": "https://raw.githubusercontent.com/Hunlar/Cemmaat/main/logo.png",
+  "keywords": ["telegram", "bot", "kur'an", "hadis"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Telegram Bot Token (BotFather'dan alınan)",
+      "required": true
+    },
+    "OWNER_IDS": {
+      "description": "Bot sahibinin Telegram kullanıcı ID'si, virgülle ayrılabilir",
+      "required": true
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "scripts": {
+    "postdeploy": "echo 'Bot deploy edildi!'"
+  }
+}
