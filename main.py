@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# === Ortam değişkenleri === #
+# === Ortam Değişkenleri === #
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_IDS = os.getenv("OWNER_IDS", "").split(",")
 
@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# === Global grup listesi === #
+# === Grup Takibi için === #
 joined_chats = set()
 
 # === API Fonksiyonları === #
@@ -109,7 +109,11 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_groups))
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(lambda: send_hourly_hadis(app), 'cron', minute=0)
+
+    async def hadis_job():
+        await send_hourly_hadis(app)
+
+    scheduler.add_job(hadis_job, "cron", minute=0)
     scheduler.start()
 
     app.run_polling()
