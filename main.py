@@ -90,7 +90,6 @@ async def track_groups(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type in ["group", "supergroup"]:
         joined_chats.add(chat.id)
 
-# === Saat başı otomatik hadis gönderme === #
 async def send_hourly_hadis(app):
     for chat_id in joined_chats:
         try:
@@ -100,7 +99,7 @@ async def send_hourly_hadis(app):
             logging.warning(f"{chat_id} grubuna hadis gönderilemedi: {e}")
 
 # === Botu başlat === #
-async def main():
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -113,9 +112,4 @@ async def main():
     scheduler.add_job(lambda: send_hourly_hadis(app), 'cron', minute=0)
     scheduler.start()
 
-    await app.run_polling()
-
-# === Async fonksiyonu çalıştır === #
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    app.run_polling()
